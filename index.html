@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Site Spending Tracker | Barton Malow</title>
+  <style>
+    :root {
+      --bm-blue:#00263A; --bm-orange:#E35205; --bm-white:#FFFFFF; --bm-text:#1A1A1A;
+      --bm-steel:#4F758B; --bm-rebar:#A5BAC9; --bm-slate:#7A97AB; --bm-craftsman:#264061;
+      --bm-rebar-20:rgba(165,186,201,0.20);
+      --bm-bg:#F4F6F8; --bm-surface:#FFFFFF; --bm-border:#A5BAC9;
+      --t-yellow:#FFB71B; --t-blue:#009ADE; --t-green:#6BA43A; --t-red:#C40D3C;
+      --radius:3px; --shadow:0 1px 3px rgba(0,0,0,0.10);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'URW DIN', Arial, sans-serif;
+      background: var(--bm-bg);
+      color: var(--bm-text);
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--bm-blue);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      border-bottom: 3px solid var(--bm-orange);
+    }
+    .header-brand { display: flex; align-items: center; gap: 14px; }
+    .header-logo {
+      width: 38px; height: 38px;
+      background: var(--bm-orange);
+      border-radius: 2px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Industry Black', 'Arial Black', Arial, sans-serif;
+      font-size: 18px; color: #fff; letter-spacing: -1px;
+    }
+    .header-title {
+      font-family: 'Industry Black', 'Arial Black', Arial, sans-serif;
+      font-size: 20px; color: var(--bm-white); letter-spacing: 0.04em;
+    }
+    .header-sub {
+      font-size: 12px; color: var(--bm-rebar);
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+
+    /* LAYOUT */
+    main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+
+    /* KPI STRIP */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px; margin-bottom: 28px;
+    }
+    .kpi-card {
+      background: var(--bm-surface);
+      border: 1px solid var(--bm-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px 14px;
+      border-top: 3px solid var(--bm-orange);
+    }
+    .kpi-label {
+      font-family: 'Industry Demi', Arial, sans-serif;
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--bm-steel); margin-bottom: 6px;
+    }
+    .kpi-value {
+      font-family: 'Industry Black', 'Arial Black', Arial, sans-serif;
+      font-size: 28px; color: var(--bm-blue); line-height: 1;
+    }
+    .kpi-value.highlight { color: var(--bm-orange); }
+
+    /* TWO-COL LAYOUT */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px; align-items: start;
+    }
+    @media (max-width: 820px) { .content-grid { grid-template-columns: 1fr; } }
+
+    /* CARDS */
+    .card {
+      background: var(--bm-surface);
+      border: 1px solid var(--bm-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      background: var(--bm-blue);
+      padding: 14px 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card-header h2 {
+      font-family: 'Industry Demi', Arial, sans-serif;
+      font-size: 13px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--bm-white);
+    }
+    .card-body { padding: 20px; }
+
+    /* FORM */
+    .form-group { margin-bottom: 16px; }
+    label {
+      display: block;
+      font-size: 11px;
+      font-family: 'Industry Demi', Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--bm-steel);
+      margin-bottom: 5px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--bm-border);
+      border-radius: var(--radius);
+      font-family: 'URW DIN', Arial, sans-serif;
+      font-size: 14px; color: var(--bm-text);
+      background: #fff;
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--bm-blue);
+      box-shadow: 0 0 0 2px rgba(0,38,58,0.15);
+    }
+    textarea { resize: vertical; min-height: 64px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* IMAGE UPLOAD */
+    .upload-area {
+      border: 2px dashed var(--bm-border);
+      border-radius: var(--radius);
+      padding: 18px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+    .upload-area:hover, .upload-area.dragover {
+      border-color: var(--bm-blue);
+      background: rgba(0,38,58,0.04);
+    }
+    .upload-area input[type="file"] {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer; width: 100%; height: 100%; padding: 0;
+    }
+    .upload-icon { font-size: 26px; margin-bottom: 6px; }
+    .upload-text {
+      font-size: 12px; color: var(--bm-steel);
+      font-family: 'Industry Demi', Arial, sans-serif;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .upload-hint { font-size: 11px; color: var(--bm-rebar); margin-top: 3px; }
+    .preview-wrap {
+      margin-top: 10px;
+      position: relative;
+      display: inline-block;
+    }
+    .preview-wrap img {
+      width: 100%; max-height: 140px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      border: 1px solid var(--bm-border);
+      display: block;
+    }
+    .preview-remove {
+      position: absolute; top: 4px; right: 4px;
+      background: rgba(0,0,0,0.55);
+      color: #fff; border: none; border-radius: 50%;
+      width: 22px; height: 22px;
+      font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .preview-remove:hover { background: var(--t-red); }
+
+    .btn-primary {
+      width: 100%; padding: 11px 20px;
+      background: var(--bm-blue); color: var(--bm-white);
+      border: none; border-radius: var(--radius);
+      font-family: 'Industry Demi', Arial, sans-serif;
+      font-size: 12px; text-transform: uppercase;
+      letter-spacing: 0.08em; cursor: pointer;
+      transition: background 0.15s; margin-top: 4px;
+    }
+    .btn-primary:hover { background: var(--bm-craftsman); }
+    .btn-primary:focus { outline: 2px solid var(--bm-orange); outline-offset: 2px; }
+
+    /* FILTERS */
+    .filter-bar {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      align-items: center; padding: 14px 20px;
+      border-bottom: 1px solid var(--bm-border);
+      background: var(--bm-bg);
+    }
+    .filter-bar select, .filter-bar input {
+      width: auto; flex: 1; min-width: 120px;
+      font-size: 13px; padding: 7px 10px;
+    }
+    .filter-label {
+      font-size: 11px;
+      font-family: 'Industry Demi', Arial, sans-serif;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--bm-steel); white-space: nowrap;
+    }
+    .btn-ghost {
+      padding: 7px 14px;
+      background: transparent; color: var(--bm-blue);
+      border: 1px solid var(--bm-border);
+      border-radius: var(--radius);
+      font-family: 'Industry Demi', Arial, sans-serif;
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.07em; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-ghost:hover { background: var(--bm-rebar-20); }
+
+    /* TABLE */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--bm-blue); }
+    thead th {
+      padding: 11px 14px; text-align: left;
+      font-family: 'Industry Demi', Arial, sans-serif;
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--bm-white); white-space: nowrap;
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--bm-border);
+      transition: background 0.1s;
+    }
+    tbody tr:nth-child(even) { background: var(--bm-rebar-20); }
+    tbody tr:hover { background: rgba(0,38,58,0.06); }
+    tbody td { padding: 10px 14px; vertical-align: middle; }
+    .amount-cell {
+      font-family: 'Industry Demi', Arial, sans-serif;
+      color: var(--bm-blue);
+    }
+    .badge {
+      display: inline-block; padding: 2px 8px;
+      border-radius: 2px; font-size: 10px;
+      font-family: 'Industry Demi', Arial, sans-serif;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .btn-delete {
+      background: transparent; border: none; cursor: pointer;
+      color: var(--bm-rebar); font-size: 16px;
+      padding: 2px 6px; border-radius: var(--radius);
+      transition: color 0.15s; line-height: 1;
+    }
+    .btn-delete:hover { color: var(--t-red); }
+
+    /* THUMBNAIL IN TABLE */
+    .thumb-wrap { display: flex; align-items: center; gap: 8px; }
+    .thumb {
+      width: 44px; height: 44px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      border: 1px solid var(--bm-border);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      flex-shrink: 0;
+    }
+    .thumb:hover { transform: scale(1.08); box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
+    .no-img {
+      width: 44px; height: 44px;
+      background: var(--bm-rebar-20);
+      border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+      color: var(--bm-rebar);
+    }
+
+    .empty-state {
+      text-align: center; padding: 48px 20px; color: var(--bm-steel);
+    }
+    .empty-state .empty-icon { font-size: 40px; margin-bottom: 10px; }
+    .empty-state p { font-size: 14px; }
+
+    /* BREAKDOWN */
+    .breakdown-list { padding: 0; list-style: none; }
+    .breakdown-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid var(--bm-border);
+    }
+    .breakdown-item:last-child { border-bottom: none; }
+    .breakdown-bar-wrap {
+      flex: 1; height: 6px;
+      background: var(--bm-rebar-20);
+      border-radius: 3px; overflow: hidden;
+    }
+    .breakdown-bar {
+      height: 100%; background: var(--bm-blue);
+      border-radius: 3px; transition: width 0.4s ease;
+    }
+    .breakdown-name { font-size: 12px; color: var(--bm-text); min-width: 110px; }
+    .breakdown-amt {
+      font-family: 'Industry Demi', Arial, sans-serif;
+      font-size: 12px; color: var(--bm-blue);
+      min-width: 70px; text-align: right;
+    }
+
+    /* LIGHTBOX */
+    #lightbox {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.82);
+      z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+    #lightbox.open { display: flex; }
+    #lightbox img {
+      max-width: 90vw; max-height: 88vh;
+      border-radius: var(--radius);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      object-fit: contain;
+    }
+    #lightbox-close {
+      position: absolute; top: 18px; right: 22px;
+      background: rgba(255,255,255,0.12);
+      color: #fff; border: none; border-radius: 50%;
+      width: 38px; height: 38px;
+      font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    #lightbox-close:hover { background: var(--t-red); }
+    #lightbox-caption {
+      position: absolute; bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.55);
+      color: #fff; padding: 6px 18px;
+      border-radius: 20px; font-size: 13px;
+      white-space: nowrap;
+    }
+
+    /* TOAST */
+    #toast {
+      position: fixed; bottom: 28px; right: 24px;
+      background: var(--bm-blue); color: #fff;
+      padding: 12px 20px; border-radius: var(--radius);
+      font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      opacity: 0; transform: translateY(10px);
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      border-left: 4px solid var(--bm-orange);
+      z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-brand">
+    <div class="header-logo">BM</div>
+    <div>
+      <div class="header-title">Job Site Spending Tracker</div>
+      <div class="header-sub">Barton Malow &mdash; Field Operations</div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- KPI STRIP -->
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Spent</div>
+      <div class="kpi-value" id="kpi-total">$0.00</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">This Month</div>
+      <div class="kpi-value" id="kpi-month">$0.00</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Entries</div>
+      <div class="kpi-value" id="kpi-count">0</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Largest Expense</div>
+      <div class="kpi-value highlight" id="kpi-largest">$0.00</div>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <!-- LEFT COLUMN -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- ADD EXPENSE FORM -->
+      <div class="card">
+        <div class="card-header"><h2>&#43; Add Expense</h2></div>
+        <div class="card-body">
+          <form id="expense-form" novalidate>
+            <div class="form-group">
+              <label for="f-desc">Description</label>
+              <input type="text" id="f-desc" placeholder="e.g. Concrete delivery" required />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-amount">Amount ($)</label>
+                <input type="number" id="f-amount" placeholder="0.00" min="0" step="0.01" required />
+              </div>
+              <div class="form-group">
+                <label for="f-date">Date</label>
+                <input type="date" id="f-date" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-category">Category</label>
+                <select id="f-category">
+                  <option value="Materials">Materials</option>
+                  <option value="Labor">Labor</option>
+                  <option value="Equipment">Equipment</option>
+                  <option value="Subcontractor">Subcontractor</option>
+                  <option value="Safety">Safety</option>
+                  <option value="Permits">Permits</option>
+                  <option value="Utilities">Utilities</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="f-vendor">Vendor</label>
+                <input type="text" id="f-vendor" placeholder="Vendor name" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="f-notes">Notes (optional)</label>
+              <textarea id="f-notes" placeholder="Additional details..."></textarea>
+            </div>
+
+            <!-- IMAGE UPLOAD -->
+            <div class="form-group">
+              <label>Receipt / Photo</label>
+              <div class="upload-area" id="upload-area">
+                <input type="file" id="f-image" accept="image/*" />
+                <div class="upload-icon">&#128247;</div>
+                <div class="upload-text">Click or drag to attach image</div>
+                <div class="upload-hint">JPG, PNG, GIF &mdash; max 5 MB</div>
+              </div>
+              <div class="preview-wrap" id="preview-wrap" style="display:none;width:100%;">
+                <img id="preview-img" src="" alt="Preview" />
+                <button type="button" class="preview-remove" id="preview-remove" title="Remove image">&#10005;</button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Add Expense</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- CATEGORY BREAKDOWN -->
+      <div class="card">
+        <div class="card-header"><h2>&#9632; Category Breakdown</h2></div>
+        <div class="card-body">
+          <ul class="breakdown-list" id="breakdown-list">
+            <li style="color:var(--bm-steel);font-size:13px;padding:10px 0;">No expenses yet.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: EXPENSE LOG -->
+    <div class="card">
+      <div class="card-header"><h2>&#9776; Expense Log</h2></div>
+      <div class="filter-bar">
+        <span class="filter-label">Filter:</span>
+        <select id="filter-cat">
+          <option value="">All Categories</option>
+          <option value="Materials">Materials</option>
+          <option value="Labor">Labor</option>
+          <option value="Equipment">Equipment</option>
+          <option value="Subcontractor">Subcontractor</option>
+          <option value="Safety">Safety</option>
+          <option value="Permits">Permits</option>
+          <option value="Utilities">Utilities</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="text" id="filter-search" placeholder="Search description or vendor..." />
+        <button class="btn-ghost" id="btn-clear-filter">Clear</button>
+        <button class="btn-ghost" id="btn-export">&#8595; Export CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Vendor</th>
+              <th>Amount</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="expense-tbody"></tbody>
+        </table>
+        <div id="empty-state" class="empty-state">
+          <div class="empty-icon">&#128203;</div>
+          <p>No expenses logged yet. Add your first entry using the form.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- LIGHTBOX -->
+<div id="lightbox">
+  <button id="lightbox-close" title="Close">&#10005;</button>
+  <img id="lightbox-img" src="" alt="" />
+  <div id="lightbox-caption"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const STORAGE_KEY = 'bm_job_expenses_v2';
+
+  const CATEGORY_COLORS = {
+    Materials:    '#00263A',
+    Labor:        '#4F758B',
+    Equipment:    '#E35205',
+    Subcontractor:'#264061',
+    Safety:       '#FFB71B',
+    Permits:      '#6BA43A',
+    Utilities:    '#009ADE',
+    Other:        '#7A97AB'
+  };
+
+  let expenses = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  let pendingImageData = null; // base64 string or null
+
+  // Set default date
+  document.getElementById('f-date').valueAsDate = new Date();
+
+  /* ---- SAVE ---- */
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+  }
+
+  /* ---- FORMATTERS ---- */
+  function fmt(n) {
+    return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function fmtDate(d) {
+    if (!d) return '';
+    const [y, m, day] = d.split('-');
+    return m + '/' + day + '/' + y;
+  }
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ---- TOAST ---- */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  /* ---- IMAGE UPLOAD HANDLING ---- */
+  const fileInput = document.getElementById('f-image');
+  const uploadArea = document.getElementById('upload-area');
+  const previewWrap = document.getElementById('preview-wrap');
+  const previewImg = document.getElementById('preview-img');
+  const previewRemove = document.getElementById('preview-remove');
+
+  fileInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be under 5 MB.');
+      this.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      pendingImageData = ev.target.result;
+      previewImg.src = pendingImageData;
+      previewWrap.style.display = 'block';
+      uploadArea.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  previewRemove.addEventListener('click', function() {
+    clearImagePreview();
+  });
+
+  function clearImagePreview() {
+    pendingImageData = null;
+    previewImg.src = '';
+    previewWrap.style.display = 'none';
+    uploadArea.style.display = 'block';
+    fileInput.value = '';
+  }
+
+  // Drag-and-drop
+  uploadArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.classList.add('dragover');
+  });
+  uploadArea.addEventListener('dragleave', function() {
+    this.classList.remove('dragover');
+  });
+  uploadArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5 MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      pendingImageData = ev.target.result;
+      previewImg.src = pendingImageData;
+      previewWrap.style.display = 'block';
+      uploadArea.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  /* ---- FILTER ---- */
+  function getFiltered() {
+    const cat = document.getElementById('filter-cat').value;
+    const q = document.getElementById('filter-search').value.trim().toLowerCase();
+    return expenses.filter(e => {
+      const matchCat = !cat || e.category === cat;
+      const matchQ = !q || e.desc.toLowerCase().includes(q) || (e.vendor || '').toLowerCase().includes(q);
+      return matchCat && matchQ;
+    });
+  }
+
+  /* ---- RENDER KPIs ---- */
+  function renderKPIs() {
+    const total = expenses.reduce((s, e) => s + e.amount, 0);
+    const now = new Date();
+    const thisMonth = expenses
+      .filter(e => {
+        if (!e.date) return false;
+        const d = new Date(e.date + 'T00:00:00');
+        return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      })
+      .reduce((s, e) => s + e.amount, 0);
+    const largest = expenses.length ? Math.max(...expenses.map(e => e.amount)) : 0;
+    document.getElementById('kpi-total').textContent = fmt(total);
+    document.getElementById('kpi-month').textContent = fmt(thisMonth);
+    document.getElementById('kpi-count').textContent = expenses.length;
+    document.getElementById('kpi-largest').textContent = fmt(largest);
+  }
+
+  /* ---- RENDER BREAKDOWN ---- */
+  function renderBreakdown() {
+    const totals = {};
+    expenses.forEach(e => { totals[e.category] = (totals[e.category] || 0) + e.amount; });
+    const grand = Object.values(totals).reduce((s, v) => s + v, 0);
+    const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    const list = document.getElementById('breakdown-list');
+    if (!sorted.length) {
+      list.innerHTML = '<li style="color:var(--bm-steel);font-size:13px;padding:10px 0;">No expenses yet.</li>';
+      return;
+    }
+    list.innerHTML = sorted.map(([cat, amt]) => {
+      const pct = grand ? (amt / grand * 100) : 0;
+      const color = CATEGORY_COLORS[cat] || '#4F758B';
+      return `<li class="breakdown-item">
+        <span class="breakdown-name">${cat}</span>
+        <div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:${pct.toFixed(1)}%;background:${color};"></div></div>
+        <span class="breakdown-amt">${fmt(amt)}</span>
+      </li>`;
+    }).join('');
+  }
+
+  /* ---- RENDER TABLE ---- */
+  function renderTable() {
+    const filtered = getFiltered();
+    const tbody = document.getElementById('expense-tbody');
+    const empty = document.getElementById('empty-state');
+    if (!filtered.length) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    const sorted = [...filtered].sort((a, b) => {
+      if (a.date > b.date) return -1;
+      if (a.date < b.date) return 1;
+      return b.id - a.id;
+    });
+    tbody.innerHTML = sorted.map(e => {
+      const color = CATEGORY_COLORS[e.category] || '#4F758B';
+      const badge = `<span class="badge" style="background:${color}20;color:${color};">${e.category}</span>`;
+      const photoCell = e.image
+        ? `<img class="thumb" src="${e.image}" alt="Receipt" data-id="${e.id}" title="Click to enlarge" />`
+        : `<div class="no-img" title="No photo">&#128247;</div>`;
+      return `<tr>
+        <td>${photoCell}</td>
+        <td>${fmtDate(e.date)}</td>
+        <td>
+          <strong>${escHtml(e.desc)}</strong>
+          ${e.notes ? `<br><span style="font-size:11px;color:var(--bm-steel);">${escHtml(e.notes)}</span>` : ''}
+        </td>
+        <td>${badge}</td>
+        <td style="color:var(--bm-steel);">${escHtml(e.vendor || '\u2014')}</td>
+        <td class="amount-cell">${fmt(e.amount)}</td>
+        <td><button class="btn-delete" data-id="${e.id}" title="Delete">&#10005;</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function render() {
+    renderKPIs();
+    renderBreakdown();
+    renderTable();
+  }
+
+  /* ---- FORM SUBMIT ---- */
+  document.getElementById('expense-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const desc = document.getElementById('f-desc').value.trim();
+    const amount = parseFloat(document.getElementById('f-amount').value);
+    const date = document.getElementById('f-date').value;
+    const category = document.getElementById('f-category').value;
+    const vendor = document.getElementById('f-vendor').value.trim();
+    const notes = document.getElementById('f-notes').value.trim();
+
+    if (!desc) { alert('Please enter a description.'); return; }
+    if (isNaN(amount) || amount <= 0) { alert('Please enter a valid amount.'); return; }
+    if (!date) { alert('Please select a date.'); return; }
+
+    expenses.push({
+      id: Date.now(),
+      desc, amount, date, category, vendor, notes,
+      image: pendingImageData || null
+    });
+    save();
+    render();
+    showToast('Expense added: ' + desc);
+
+    // Reset
+    document.getElementById('f-desc').value = '';
+    document.getElementById('f-amount').value = '';
+    document.getElementById('f-vendor').value = '';
+    document.getElementById('f-notes').value = '';
+    document.getElementById('f-date').valueAsDate = new Date();
+    clearImagePreview();
+    document.getElementById('f-desc').focus();
+  });
+
+  /* ---- DELETE ---- */
+  document.getElementById('expense-tbody').addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-delete');
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+    const entry = expenses.find(x => x.id === id);
+    if (!entry) return;
+    if (!confirm('Delete expense: "' + entry.desc + '"?')) return;
+    expenses = expenses.filter(x => x.id !== id);
+    save();
+    render();
+    showToast('Expense deleted.');
+  });
+
+  /* ---- LIGHTBOX ---- */
+  document.getElementById('expense-tbody').addEventListener('click', function(e) {
+    const thumb = e.target.closest('.thumb');
+    if (!thumb) return;
+    const id = Number(thumb.dataset.id);
+    const entry = expenses.find(x => x.id === id);
+    if (!entry || !entry.image) return;
+    document.getElementById('lightbox-img').src = entry.image;
+    document.getElementById('lightbox-caption').textContent = entry.desc + (entry.date ? '  \u2022  ' + fmtDate(entry.date) : '');
+    document.getElementById('lightbox').classList.add('open');
+  });
+  document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+  document.getElementById('lightbox').addEventListener('click', function(e) {
+    if (e.target === this) closeLightbox();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeLightbox();
+  });
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.getElementById('lightbox-img').src = '';
+  }
+
+  /* ---- FILTERS ---- */
+  document.getElementById('filter-cat').addEventListener('change', renderTable);
+  document.getElementById('filter-search').addEventListener('input', renderTable);
+  document.getElementById('btn-clear-filter').addEventListener('click', function() {
+    document.getElementById('filter-cat').value = '';
+    document.getElementById('filter-search').value = '';
+    renderTable();
+  });
+
+  /* ---- EXPORT CSV ---- */
+  document.getElementById('btn-export').addEventListener('click', function() {
+    if (!expenses.length) { alert('No expenses to export.'); return; }
+    const headers = ['Date','Description','Category','Vendor','Amount','Notes','Has Photo'];
+    const rows = expenses
+      .sort((a,b) => a.date > b.date ? -1 : 1)
+      .map(e => [
+        e.date,
+        '"' + (e.desc||'').replace(/"/g,'""') + '"',
+        e.category,
+        '"' + (e.vendor||'').replace(/"/g,'""') + '"',
+        e.amount.toFixed(2),
+        '"' + (e.notes||'').replace(/"/g,'""') + '"',
+        e.image ? 'Yes' : 'No'
+      ].join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'barton-malow-expenses.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV exported!');
+  });
+
+  /* ---- INIT ---- */
+  render();
+</script>
+</body>
+</html>
